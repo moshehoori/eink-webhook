@@ -1,0 +1,154 @@
+name: Apply files from issue
+
+# One-time helper. A new issue opened by the repo owner whose title starts with
+# "[APPLY" and whose body is "APPLY-FILES v1" on line 1, then a JSON object:
+#   {"message": "...", "files": [{"path": "...", "content_b64": "..."}],
+#    "concat": [{"path": "...", "parts": ["a.part1", "a.part2"], "delete_parts": true}]}
+# is written into the repo and pushed to main. Delete this workflow when done.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  apply:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      startsWith(github.event.issue.title, '[APPLY')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # Issue content goes through env vars, never ${{ }} inside the script.
+      - name: Apply
+        id: apply
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          printf '%s' "$ISSUE_BODY" > "$RUNNER_TEMP/body.txt"
+          cat > "$RUNNER_TEMP/apply.py" <<'PY'
+          import base64, json, os, sys
+
+          root = os.path.realpath(os.getcwd())
+
+          def safe(p):
+              if not isinstance(p, str) or not p or p.startswith("/") or "\\" in p or "\x00" in p:
+                  raise ValueError("bad path: %r" % (p,))
+              parts = p.split("/")
+              if any(x in ("", ".", "..") for x in parts):
+                  raise ValueError("bad path: %r" % (p,))
+              if parts[0] in (".git", ".github"):
+                  raise ValueError("path not allowed: %r" % (p,))
+              full = os.path.realpath(os.path.join(root, p))
+              if not full.startswith(root + os.sep):
+                  raise ValueError("path escapes repo: %r" % (p,))
+              # refuse to write through symlinks
+              cur = root
+              for x in parts:
+                  cur = os.path.join(cur, x)
+                  if os.path.islink(cur):
+                      raise ValueError("symlink in path: %r" % (p,))
+              return full
+
+          raw = open(sys.argv[1], encoding="utf-8").read().replace("\r\n", "\n").strip()
+          first, _, rest = raw.partition("\n")
+          if first.strip() != "APPLY-FILES v1":
+              raise ValueError("first line of body must be: APPLY-FILES v1")
+          rest = rest.strip()
+          if rest.startswith("```"):
+              rest = rest.split("\n", 1)[1].rsplit("```", 1)[0]
+          data = json.loads(rest)
+          if not isinstance(data, dict):
+              raise ValueError("body JSON must be an object")
+          files = data.get("files") or []
+          concat = data.get("concat") or []
+          msg = data.get("message")
+          if not isinstance(msg, str) or not msg.strip():
+              raise ValueError("missing commit message")
+          if not isinstance(files, list) or not isinstance(concat, list) or not (files or concat):
+              raise ValueError("nothing to apply")
+
+          written = []
+          for f in files:
+              full = safe(f.get("path"))
+              blob = base64.b64decode(f["content_b64"], validate=True)
+              os.makedirs(os.path.dirname(full), exist_ok=True)
+              with open(full, "wb") as fh:
+                  fh.write(blob)
+              written.append("%s (%d bytes)" % (f["path"], len(blob)))
+
+          for c in concat:
+              full = safe(c.get("path"))
+              plist = c.get("parts")
+              if not isinstance(plist, list) or not plist:
+                  raise ValueError("concat needs parts")
+              pfull = [safe(p) for p in plist]
+              for p, pf in zip(plist, pfull):
+                  if not os.path.isfile(pf):
+                      raise ValueError("missing part (apply earlier issues first): %s" % p)
+              data_out = b"".join(open(pf, "rb").read() for pf in pfull)
+              os.makedirs(os.path.dirname(full), exist_ok=True)
+              with open(full, "wb") as fh:
+                  fh.write(data_out)
+              written.append("%s (%d bytes, joined %d parts)" % (c["path"], len(data_out), len(plist)))
+              if c.get("delete_parts"):
+                  for pf in pfull:
+                      os.remove(pf)
+
+          open(sys.argv[2], "w", encoding="utf-8").write(msg.strip())
+          open(sys.argv[3], "w", encoding="utf-8").write("\n".join("- " + w for w in written))
+          PY
+          python3 "$RUNNER_TEMP/apply.py" "$RUNNER_TEMP/body.txt" "$RUNNER_TEMP/msg.txt" "$RUNNER_TEMP/written.txt"
+
+      - name: Commit and push to main
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          git config user.name "eink-webhook"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -q -F "$RUNNER_TEMP/msg.txt"
+          URL="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
+          for i in 1 2 3 4; do
+            if git push -q "$URL" HEAD:main; then exit 0; fi
+            git pull -q --rebase "$URL" main
+          done
+          echo "push failed after retries"; exit 1
+
+      - name: Comment and close on success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          { echo "Applied and pushed to main:"; cat "$RUNNER_TEMP/written.txt"; echo; echo "Commit: $(git rev-parse --short HEAD)"; } > "$RUNNER_TEMP/ok.md"
+          gh issue close "$ISSUE_NUMBER" --comment-file "$RUNNER_TEMP/ok.md" 2>/dev/null \
+            || { gh issue comment "$ISSUE_NUMBER" --body-file "$RUNNER_TEMP/ok.md"; gh issue close "$ISSUE_NUMBER"; }
+
+      - name: Comment on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Apply failed, nothing was pushed. Run log - $RUN_URL"
