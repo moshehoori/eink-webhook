@@ -179,9 +179,66 @@ def draw_chart(d, pts, box, title=None):
     draw_text(d,f"{pts[-1]:g}",(x0,max(y0,ey-30),x1,max(y0,ey-30)+24),18,True,"right")
 
 
+def draw_monkey(d, w, h, caption):
+    """Cute cartoon monkey face + banana + Hebrew caption, tuned for 1-bit."""
+    s = min(w / 800, h / 480)
+    def X(x): return round((x - 400) * s + w / 2)
+    def Y(y): return round((y - 240) * s + h / 2 - 20 * s)
+    def R(r): return max(1, round(r * s))
+    K, W = 0, 255
+    cx, cy, hr = 400, 210, 150
+    # Ears: black with white inner circle.
+    for ex in (cx - 150, cx + 150):
+        ey = cy - 70
+        d.ellipse((X(ex-72), Y(ey-72), X(ex+72), Y(ey+72)), fill=K)
+        d.ellipse((X(ex-36), Y(ey-36), X(ex+36), Y(ey+36)), fill=W)
+    # Head.
+    d.ellipse((X(cx-hr), Y(cy-hr), X(cx+hr), Y(cy+hr)), fill=K)
+    # Face: two overlapping white ellipses (eye area + muzzle).
+    d.ellipse((X(cx-108), Y(cy-102), X(cx+108), Y(cy+32)), fill=W)
+    d.ellipse((X(cx-92), Y(cy-24), X(cx+92), Y(cy+118)), fill=W)
+    # Eyes with highlights.
+    for ex in (cx - 52, cx + 52):
+        ey = cy - 42
+        d.ellipse((X(ex-20), Y(ey-20), X(ex+20), Y(ey+20)), fill=K)
+        d.ellipse((X(ex-13), Y(ey-14), X(ex-1), Y(ey-2)), fill=W)
+    # Nose.
+    d.ellipse((X(cx-16), Y(cy+8), X(cx+16), Y(cy+30)), fill=K)
+    # Smile.
+    d.arc((X(cx-68), Y(cy+18), X(cx+68), Y(cy+104)), start=12, end=168, fill=K, width=R(7))
+    # Hair tufts.
+    for dx in (-30, 0, 30):
+        d.arc((X(cx+dx-24), Y(cy-hr-30), X(cx+dx+24), Y(cy-hr+34)), start=200, end=340, fill=K, width=R(8))
+    # Banana: tilted parametric crescent + stem.
+    bcx, bcy, orad, icy, irad = 170, 330, 105, -38, 84
+    tilt = math.radians(-22)
+    def BP(px, py):
+        qx, qy = px - bcx, py - bcy
+        return (X(bcx + qx*math.cos(tilt) - qy*math.sin(tilt)),
+                Y(bcy + qx*math.sin(tilt) + qy*math.cos(tilt)))
+    outer = [BP(bcx + orad*math.cos(math.radians(t)), bcy + orad*math.sin(math.radians(t)))
+             for t in range(14, 167, 4)]
+    inner = [BP(bcx + irad*math.cos(math.radians(t)), bcy + icy + irad*math.sin(math.radians(t)))
+             for t in range(162, 17, -4)]
+    d.polygon(outer + inner, fill=K)
+    stx, sty = bcx + orad*math.cos(math.radians(160)), bcy + orad*math.sin(math.radians(160))
+    p0, p1 = BP(stx, sty), BP(stx-16, sty-28)
+    d.line((p0[0], p0[1], p1[0], p1[1]), fill=K, width=R(9))
+    d.ellipse((p1[0]-R(8), p1[1]-R(8), p1[0]+R(8), p1[1]+R(8)), fill=K)
+    # Caption (bidi-reordered once, like draw_text).
+    f = font(round(72 * s), True)
+    v = visual(caption)
+    tw = f.getlength(v)
+    d.text((round(w/2 - tw/2), Y(430)), v, font=f, fill=K, anchor="lt")
+
+
 def render_payload(payload, w, h, received=None, count=0, image_loader=ws.load_image):
     """All legacy fields remain supported, including unknown key/value rows."""
     p=dict(payload)
+    if str(p.get("mode","")).strip().lower()=="monkey":
+        canvas=Image.new("L",(w,h),255)
+        draw_monkey(ImageDraw.Draw(canvas),w,h,str(p.get("caption") or "קוף!"))
+        return canvas.point(lambda px:255 if px>=128 else 0).convert("1")
     title=p.pop("title",None) or "Webhook"
     footer=p.pop("footer",None)
     text=p.pop("text",None)
@@ -280,3 +337,4 @@ def main():
 
 
 if __name__=="__main__":main()
+
