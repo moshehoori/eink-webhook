@@ -232,9 +232,77 @@ def draw_monkey(d, w, h, caption):
     d.text((round(w/2 - tw/2), Y(430)), v, font=f, fill=K, anchor="lt")
 
 
+def shipments_data(payload):
+    """Use a fixed data file, or an explicit inline shipments object."""
+    if "shipments" in payload:
+        data = payload["shipments"]
+    else:
+        data = json.loads((Path(__file__).resolve().parent.parent / "data" / "shipments.json").read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+        raise ValueError("shipments must contain an items list")
+    if not 1 <= len(data["items"]) <= 8:
+        raise ValueError("shipments screen supports 1-8 items; split longer lists")
+    for item in data["items"]:
+        if not isinstance(item, dict) or not item.get("name") or not item.get("status"):
+            raise ValueError("each shipment needs name and status")
+    return data
+
+
+def draw_shipments(data, w, h):
+    """Numbered, two-line RTL rows. Reject overflow instead of hiding items."""
+    if min(w, h) < 320:
+        raise ValueError("shipments screen needs at least 320 pixels per side")
+    canvas = Image.new("L", (w, h), 255)
+    d = ImageDraw.Draw(canvas)
+    m, top, bottom = 24, 90, h - 42
+    icon(d, "box", w-m-42, 22, 38)
+    draw_text(d, data.get("title", "חבילות ומשלוחים"), (m, 18, w-m-58, 65), 34, True, "right")
+    d.line((m, 78, w-m, 78), fill=0, width=2)
+    items = data["items"]
+    row_h = (bottom-top)/len(items)
+    available = w-2*m-42
+    layouts = None
+    for name_size, status_size in ((21,18), (20,17), (18,16), (16,14)):
+        candidate = []
+        valid = True
+        for item in items:
+            nl = wrap(item["name"], font(name_size, True), available)
+            sl = wrap(item["status"], font(status_size), available)
+            height = len(nl)*(name_size+4)+len(sl)*(status_size+4)+8
+            if height > row_h or any(width(line,font(name_size,True)) > available for line in nl) or any(width(line,font(status_size)) > available for line in sl):
+                valid = False
+                break
+            candidate.append((nl,sl,height))
+        if valid:
+            layouts = candidate
+            break
+    if layouts is None:
+        raise ValueError("shipments text does not fit: shorten name/status, never silently truncate")
+    for i,(nl,sl,height) in enumerate(layouts):
+        y = top + i*row_h
+        draw_text(d, str(i+1), (w-m-30,y,w-m,y+row_h), 21,True,"center")
+        ty = y + (row_h-height)/2 + 4
+        for line in nl:
+            draw_text(d,line,(m,ty,w-m-42,ty+name_size+4),name_size,True,"right")
+            ty += name_size+4
+        for line in sl:
+            draw_text(d,line,(m,ty,w-m-42,ty+status_size+4),status_size,False,"right")
+            ty += status_size+4
+        if i+1<len(items):
+            d.line((m,round(y+row_h),w-m,round(y+row_h)),fill=0,width=1)
+    footer = data.get("footer") or "עודכן " + str(data.get("updated_at", ""))
+    if width(footer,font(17,True)) > w-2*m:
+        raise ValueError("shipments footer does not fit")
+    d.rectangle((0,h-34,w,h),fill=0)
+    draw_text(d,footer,(m,h-31,w-m,h-3),17,True,"right",255)
+    return canvas.point(lambda px:255 if px>=128 else 0).convert("1")
+
+
 def render_payload(payload, w, h, received=None, count=0, image_loader=ws.load_image):
     """All legacy fields remain supported, including unknown key/value rows."""
     p=dict(payload)
+    if str(p.get("mode", "")).strip().lower() == "shipments":
+        return draw_shipments(shipments_data(p), w, h)
     if str(p.get("mode","")).strip().lower()=="monkey":
         canvas=Image.new("L",(w,h),255)
         draw_monkey(ImageDraw.Draw(canvas),w,h,str(p.get("caption") or "קוף!"))

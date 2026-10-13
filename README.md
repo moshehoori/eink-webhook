@@ -117,3 +117,27 @@ This is a **public** repo. Every image and `payload.json` on the `display` branc
 ## License
 
 MIT
+
+## Packages and shipments screen
+
+Use `{"mode":"shipments"}` as the render payload. The renderer reads
+`data/shipments.json` from main and shows every item as a numbered Hebrew/RTL
+row in both landscape and portrait. This mode supports 1-8 items and rejects
+text that does not fit instead of silently dropping or truncating a shipment.
+
+To update the screen next time:
+
+1. Update only `data/shipments.json`, keeping `title`, `updated_at`, `footer`,
+   and `items` (each item has `name` and `status`). Use a real freshness time,
+   verify the source status and keep uncertainty beside the shipment.
+2. After the data commit lands on main, open an owner-authored issue whose
+   body is exactly `{"mode":"shipments"}`. The Render workflow publishes
+   `dashboard.png` and `dashboard-portrait.png` to the display branch.
+3. Check the published image. The physical reader loads it on its own next
+   refresh; publication does not prove the device has refreshed yet.
+
+An inline payload is also supported:
+`{"mode":"shipments","shipments":{"title":"חבילות","items":[{"name":"חבילה","status":"בדרך"}],"footer":"עודכן 13.10"}}`.
+Use the data file for the persistent list, not inline payloads that leave main
+out of date. This repo and its images are public: personal shipment data
+requires the owner's explicit public-sharing approval.
