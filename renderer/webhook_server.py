@@ -176,83 +176,9 @@ def draw_chart(d, pts, box, title=None):
 
 
 def render_payload(payload, w, h, received=None, count=0, image_loader=load_image):
-    """Pure renderer: payload dict -> 1-bit PIL image of size (w, h)."""
-    p = dict(payload)
-    im = Image.new("1", (w, h), 1)  # 1 = white
-    d = ImageDraw.Draw(im)
-    m = 28
-    footer_h = 40
-    footer_top = h - footer_h
-
-    title = p.pop("title", None)
-    title = "Webhook" if title in (None, "") else str(title)
-    d.text((m, m), fit_text(d, title, font(44, True), w - 2 * m), font=font(44, True), fill=0)
-    y = m + 62
-    d.line((m, y, w - m, y), fill=0, width=3)
-    y += 20
-
-    src = p.pop("image", None)
-    image = image_loader(str(src), count) if src else None
-    pts = chart_values(p.pop("chart", None))
-    chart_title = p.pop("chart_title", None)
-    footer = p.pop("footer", None)
-    text = p.pop("text", None)
-    rows = normalize_items(p.pop("items", None))
-    rows += [(str(k), json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in p.items()]
-    has_text = bool(text) or bool(rows)
-
-    # Graphics: right column in landscape, lower half in portrait, everything without text.
-    text_right, text_bottom = w - m, footer_top - 12
-    if image is not None or pts is not None:
-        if not has_text:
-            gbox = (m, y, w - m, footer_top - 12)
-        elif w >= h:
-            gx0 = int(w * 0.48)
-            gbox = (gx0, y, w - m, footer_top - 12)
-            text_right = gx0 - 20
-        else:
-            gy0 = y + int((footer_top - y) * 0.45)
-            gbox = (m, gy0, w - m, footer_top - 12)
-            text_bottom = gy0 - 12
-        if image is not None and pts is not None:
-            mid = (gbox[1] + gbox[3]) // 2
-            draw_image(im, image, (gbox[0], gbox[1], gbox[2], mid - 8))
-            draw_chart(d, pts, (gbox[0], mid + 8, gbox[2], gbox[3]), chart_title)
-        elif image is not None:
-            draw_image(im, image, gbox)
-        else:
-            draw_chart(d, pts, gbox, chart_title)
-
-    if text:
-        chars = max(10, (text_right - m) // 17)
-        for line in textwrap.wrap(str(text), chars)[:MAX_TEXT_LINES]:
-            if y + 40 > text_bottom:
-                break
-            d.text((m, y), fit_text(d, line, font(30), text_right - m), font=font(30), fill=0)
-            y += 40
-        y += 10
-
-    for label, value in rows:
-        if y + 36 > text_bottom:
-            break
-        vfont = font(26, True)
-        value = fit_text(d, value, vfont, (text_right - m) * 0.6)
-        vw = d.textlength(value, font=vfont)
-        d.text((m, y), fit_text(d, label, font(26), text_right - m - vw - 12), font=font(26), fill=0)
-        d.text((text_right - vw, y), value, font=vfont, fill=0)
-        y += 36
-        d.line((m, y, text_right, y), fill=0, width=1)
-        y += 10
-
-    if footer is not None:
-        footer_text = str(footer)
-    elif received:
-        footer_text = f"Webhook #{count}, received {time.strftime('%H:%M:%S', time.localtime(received))}"
-    else:
-        footer_text = "No webhook received yet"
-    d.rectangle((0, footer_top, w, h), fill=0)
-    d.text((m, footer_top + 8), fit_text(d, footer_text, font(20, True), w - 2 * m), font=font(20, True), fill=1)
-    return im
+    """Share the same Hebrew-aware renderer with the Actions CLI."""
+    from render import render_payload as styled_render
+    return styled_render(payload, w, h, received, count, image_loader)
 
 
 def render(w, h):
