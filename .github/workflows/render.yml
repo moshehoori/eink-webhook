@@ -1,11 +1,14 @@
 name: Render e-ink dashboard
 
-# A webhook (repository_dispatch, event_type "eink") or a manual run renders the
-# payload and force-pushes the images to the "display" branch, which the reader
-# downloads from raw.githubusercontent.com on its next wake.
+# A webhook (repository_dispatch, event_type "eink"), a manual run, or a new issue
+# opened by the repo owner (issue body = payload JSON) renders the payload and
+# force-pushes the images to the "display" branch, which the reader downloads
+# from raw.githubusercontent.com on its next wake.
 on:
   repository_dispatch:
     types: [eink]
+  issues:
+    types: [opened]
   workflow_dispatch:
     inputs:
       payload:
@@ -15,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: eink-render
@@ -22,6 +26,9 @@ concurrency:
 
 jobs:
   render:
+    # Issues only count when opened by the repo owner, so strangers cannot
+    # put content on the screen. Other event types are unchanged.
+    if: github.event_name != 'issues' || github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -37,15 +44,38 @@ jobs:
           fc-list | grep -qi dejavu || sudo apt-get install -y -qq fonts-dejavu-core
 
       # Payloads go through env vars, never ${{ }} inside the script, so webhook
-      # content cannot inject shell commands.
+      # or issue content cannot inject shell commands.
       - name: Read payload
         env:
           EVENT: ${{ github.event_name }}
           DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           INPUT_PAYLOAD: ${{ github.event.inputs.payload }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           if [ "$EVENT" = "repository_dispatch" ]; then
             printf '%s' "$DISPATCH_PAYLOAD" > "$RUNNER_TEMP/payload.json"
+          elif [ "$EVENT" = "issues" ]; then
+            printf '%s' "$ISSUE_BODY" > "$RUNNER_TEMP/issue_body.txt"
+            # Accept plain JSON or JSON inside a ``` code fence.
+            if ! python3 - "$RUNNER_TEMP/issue_body.txt" "$RUNNER_TEMP/payload.json" <<'PY'
+          import json, re, sys
+          raw = open(sys.argv[1], encoding="utf-8").read().strip()
+          m = re.match(r"^```[a-zA-Z]*\s*\n(.*?)\n?```$", raw, re.S)
+          if m:
+              raw = m.group(1).strip()
+          data = json.loads(raw)
+          if not isinstance(data, dict):
+              raise ValueError("payload must be a JSON object")
+          json.dump(data, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False)
+          PY
+            then
+              echo "::error::Issue #$ISSUE_NUMBER body is not a valid JSON object payload"
+              gh issue comment "$ISSUE_NUMBER" --body "Could not render: the issue body is not a valid JSON object. See docs/format.md for the payload format."
+              exit 1
+            fi
           else
             printf '%s' "$INPUT_PAYLOAD" > "$RUNNER_TEMP/payload.json"
           fi
@@ -70,3 +100,12 @@ jobs:
           git commit -q -m "Render #$RUN_NUMBER"
           # Force-push a single commit: the branch only ever holds the latest image.
           git push -q --force "https://x-access-token:${TOKEN}@github.com/${REPO}.git" display
+
+      - name: Close the trigger issue
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: gh issue close "$ISSUE_NUMBER" --comment "Rendered (run #$RUN_NUMBER)."
