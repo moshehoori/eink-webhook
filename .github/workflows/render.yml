@@ -1,0 +1,72 @@
+name: Render e-ink dashboard
+
+# A webhook (repository_dispatch, event_type "eink") or a manual run renders the
+# payload and force-pushes the images to the "display" branch, which the reader
+# downloads from raw.githubusercontent.com on its next wake.
+on:
+  repository_dispatch:
+    types: [eink]
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Webhook JSON (see docs/format.md)
+        required: true
+        default: '{"title": "Hello", "text": "Sent from the Actions tab"}'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: eink-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          pip install -q -r requirements.txt
+          fc-list | grep -qi dejavu || sudo apt-get install -y -qq fonts-dejavu-core
+
+      # Payloads go through env vars, never ${{ }} inside the script, so webhook
+      # content cannot inject shell commands.
+      - name: Read payload
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          INPUT_PAYLOAD: ${{ github.event.inputs.payload }}
+        run: |
+          if [ "$EVENT" = "repository_dispatch" ]; then
+            printf '%s' "$DISPATCH_PAYLOAD" > "$RUNNER_TEMP/payload.json"
+          else
+            printf '%s' "$INPUT_PAYLOAD" > "$RUNNER_TEMP/payload.json"
+          fi
+
+      - name: Render
+        env:
+          TZ: ${{ vars.EINK_TZ || 'UTC' }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: python renderer/render.py "$RUNNER_TEMP/payload.json" "$RUNNER_TEMP/out"
+
+      - name: Publish to the display branch
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          cd "$RUNNER_TEMP/out"
+          git init -q -b display
+          git config user.name "eink-webhook"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Render #$RUN_NUMBER"
+          # Force-push a single commit: the branch only ever holds the latest image.
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${REPO}.git" display
