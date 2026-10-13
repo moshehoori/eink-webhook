@@ -129,7 +129,12 @@ To update the screen next time:
 
 1. Update only `data/shipments.json`, keeping `title`, `updated_at`, `footer`,
    and `items` (each item has `name` and `status`). Use a real freshness time,
-   verify the source status and keep uncertainty beside the shipment.
+   verify the source status and keep uncertainty beside the shipment. **Every
+   pickup item must always include both the pickup point's opening hours and the
+   pickup deadline in its status, each qualified by its source.** If the source
+   does not state a deadline, say explicitly that it is unknown; do not infer
+   one. If hours vary by day, show today's hours and the regular schedule or
+   closure as the official source lists it.
 2. After the data commit lands on main, open an owner-authored issue whose
    body is exactly `{"mode":"shipments"}`. The Render workflow publishes
    `dashboard.png` and `dashboard-portrait.png` to the display branch.
