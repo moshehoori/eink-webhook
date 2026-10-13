@@ -101,7 +101,7 @@ It uses `EINK_GITHUB_TOKEN`, `GITHUB_TOKEN`, or a logged-in `gh` CLI. Set `EINK_
 | --- | --- |
 | GitHub Actions render and publish | about 30–60 s |
 | raw.githubusercontent.com cache | up to 5 min |
-| Reader picks it up | at its next refresh: its interval, or hourly overnight in *Extra page* mode |
+| Reader picks it up | at its next image refresh: the reader's **Image refresh interval** (5 min to 4 h), day and night |
 
 ## Privacy
 

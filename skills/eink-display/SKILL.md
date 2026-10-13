@@ -54,8 +54,8 @@ width; image and chart together stack. About 8 rows fit with no text.
 ## Timing
 
 Publishing takes ~1 minute; raw.githubusercontent.com may serve the old image for up to 5
-minutes; the reader then shows it at its next refresh (its interval, often 15-30 min, or
-hourly overnight). Tell the user it is not instant. Current image:
+minutes; the reader then shows it at its next image refresh (its "Image refresh interval",
+5 min to 4 h, day and night). Tell the user it is not instant. Current image:
 `https://raw.githubusercontent.com/moshehoori/eink-webhook/display/dashboard.png`
 (`dashboard-portrait.png` for portrait). `payload.json` on the `display` branch shows what
 was last sent.
