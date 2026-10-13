@@ -33,10 +33,15 @@ def token():
     for var in ("EINK_GITHUB_TOKEN", "GITHUB_TOKEN"):
         if os.environ.get(var):
             return os.environ[var]
-    try:
-        return subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        sys.exit("No GitHub token: set EINK_GITHUB_TOKEN (Contents: read & write on the webhook repo) or log in with gh.")
+    # gh >= 2.17 has `gh auth token`; older versions keep it in the config.
+    for cmd in (["gh", "auth", "token"], ["gh", "config", "get", "-h", "github.com", "oauth_token"]):
+        try:
+            out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout.strip()
+            if out:
+                return out
+        except (OSError, subprocess.CalledProcessError):
+            continue
+    sys.exit("No GitHub token: set EINK_GITHUB_TOKEN (Contents: read & write on the webhook repo) or log in with gh.")
 
 
 def api(method, url, tok, body=None):
