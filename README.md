@@ -135,9 +135,11 @@ To update the screen next time:
    does not state a deadline, say explicitly that it is unknown; do not infer
    one. If hours vary by day, show today's hours and the regular schedule or
    closure as the official source lists it.
-2. After the data commit lands on main, open an owner-authored issue whose
-   body is exactly `{"mode":"shipments"}`. The Render workflow publishes
-   `dashboard.png` and `dashboard-portrait.png` to the display branch.
+2. After the data commit lands on main, render the dashboard locally and
+   publish `dashboard.png` and `status.json` directly to the `display` branch
+   using the approved repository token. Do not use the Actions Render issue
+   for shipment screens; the current row-text fit constraint causes it to fail.
+   Verify both the branch contents and the published image before sending it.
 3. Check the published image. The physical reader loads it on its own next
    refresh; publication does not prove the device has refreshed yet.
 
