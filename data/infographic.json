@@ -1,6 +1,5 @@
 {
-  "mode": "infographic",
-  "updated_at": "15.10.2026 10:32 Asia/Jerusalem",
+  "updated_at": "15.10.2026 10:37 Asia/Jerusalem",
   "title": "היום שלנו",
   "trip": {
     "label": "בודפשט",
@@ -16,10 +15,11 @@
     "label": "מזג אוויר · רמת גן",
     "value": "26°–27°",
     "detail": "מעונן חלקית",
-    "rain": "בוקר: 67% | מצהריים: 0%"
+    "rain": "שיא 06:00 67% | מ-15:00 0%"
   },
   "wolt": {
     "label": "קרדיט Wolt",
     "value": "₪19.99"
-  }
+  },
+  "mode": "infographic"
 }
