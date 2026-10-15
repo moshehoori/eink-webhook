@@ -148,3 +148,27 @@ An inline payload is also supported:
 Use the data file for the persistent list, not inline payloads that leave main
 out of date. This repo and its images are public: personal shipment data
 requires the owner's explicit public-sharing approval.
+
+
+## Daily four-quadrant infographic
+
+The approved default display is a four-tile, Hebrew RTL infographic with large type, a white background, and clean 1-bit black illustrations. It renders two orientations: `dashboard.png` (792×528 landscape) and `dashboard-portrait.png` (528×792 portrait). The data is in `data/infographic.json`; use `{"mode":"infographic"}` to load it, or pass the same fields inline under `infographic`.
+
+Each daily update refreshes these four tiles:
+
+1. **Budapest countdown:** target flight date is 2026-11-05. Calculate whole calendar days from today's date in `Asia/Jerusalem` at the time of the update. Update `trip.value`; keep the Hebrew label and detail.
+2. **Uncollected parcels:** use current owner-authorized mail/message evidence and the live carrier status where available. Count only items that are actually awaiting collection. Exclude confirmed-collected items. `parcels.value` is the count and `parcels.detail` is a short sanitized carrier/item list (for example, `צ׳יטה + Shipi`). Never place tracking IDs, parcel codes, shelf numbers, recipient addresses, door codes, amounts, or private contact details in the public JSON or image. If collection status is uncertain, do not mark as collected or present uncertain status as confirmed; report the uncertainty separately.
+3. **Ramat Gan weather:** use a fresh, live Open-Meteo forecast for `Ramat Gan`, timezone `Asia/Jerusalem`, in metric units. Read hourly precipitation probability and weather code, plus today's high/low. Set `weather.value` to the day's high/low, `weather.detail` to the concise Hebrew condition, and `weather.rain` to a precise summary of the hourly probability pattern (e.g. `בוקר: 67% | מצהריים: 0%`). Do not present the day's maximum as a current or all-day probability. Include when the peak occurs if it matters, and summarize the remaining hours accurately. If the forecast is unavailable, do not reuse stale numbers.
+4. **Wolt credit:** check the signed-in Wolt account's Profile live (the previous successful route was the Profile page; `/en/isr/account/wallet` soft-404ed). The balance is split into Gift Cards & Voucher credits and Refunds & Discount credits. Report the sum only after reading both current balances. Do not infer a missing value; if account access or the balance cannot be verified, tell the parent and avoid a stale displayed value.
+
+To refresh, update `data/infographic.json` from those live sources, set `updated_at` in Jerusalem time, and locally render with the repository's `renderer/render.py`:
+
+```bash
+python3 renderer/render.py data/infographic.json out/
+```
+
+The renderer treats a top-level `mode: "infographic"` payload as the four-quadrant layout. The object fields are `title`, `trip` (`label`, `value`, `detail`), `parcels` (`label`, `value`, `detail`), `weather` (`label`, `value`, `detail`, `rain`), `wolt` (`label`, `value`), and `updated_at`. Inspect both generated PNGs visually before publishing. The full payload is included in the generated `payload.json`.
+
+After main/data and renderer edits are committed, publish the two PNGs plus `payload.json` and `status.json` to the `display` branch. Use the approved repo-scoped token from the vault, not one copied into chat or committed to files. Verify the bytes on `display` against the local rendered outputs and inspect the published images. Do not claim the e-ink reader has refreshed; it downloads on its own image-refresh interval and may see a raw GitHub cache delay of up to five minutes.
+
+The daily refresh is scheduled for 07:00 Asia/Jerusalem. The separate 09:30 pickup digest remains in effect; its report is not a replacement for the four-quadrant infographic refresh.

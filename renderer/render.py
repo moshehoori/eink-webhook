@@ -298,9 +298,130 @@ def draw_shipments(data, w, h):
     return canvas.point(lambda px:255 if px>=128 else 0).convert("1")
 
 
+def draw_infographic(data, w, h):
+    """Render the approved four-tile Hebrew e-ink dashboard, landscape or portrait."""
+    if not isinstance(data, dict):
+        raise ValueError("infographic payload must be an object")
+    trip = data.get("trip", {})
+    parcels = data.get("parcels", {})
+    weather = data.get("weather", {})
+    wolt = data.get("wolt", {})
+    required = [(trip,"label","value","detail"),(parcels,"label","value","detail"),
+                (weather,"label","value","detail","rain"),(wolt,"label","value")]
+    if any(not all(isinstance(o.get(k),str) and o[k] for k in keys) for o,*keys in required):
+        raise ValueError("infographic needs trip/parcels/weather/wolt labels and values")
+    if min(w,h) < 320:
+        raise ValueError("infographic needs at least 320 pixels per side")
+    canvas=Image.new("L",(w,h),255); d=ImageDraw.Draw(canvas)
+    portrait=h>w
+    margin=18 if portrait else 22
+    gap=12 if portrait else 14
+    header_h=54 if portrait else 64
+    bottom=h-(16 if portrait else 18)
+    cw=(w-2*margin-gap)//2
+    ch=(bottom-header_h-gap)//2
+    rects={"parcels":(margin,header_h,margin+cw,header_h+ch),
+           "trip":(margin+cw+gap,header_h,w-margin,header_h+ch),
+           "wolt":(margin,header_h+ch+gap,margin+cw,bottom),
+           "weather":(margin+cw+gap,header_h+ch+gap,w-margin,bottom)}
+    for box in rects.values():
+        d.rounded_rectangle(box,radius=16,fill=255,outline=0,width=3)
+    def title(obj): return str(obj.get("label",""))
+    def value(obj): return str(obj.get("value",""))
+    def detail(obj,key="detail"): return str(obj.get(key,""))
+    def center(obj,s): return obj[0]+(obj[2]-obj[0])/2
+    def text(s,x,y,size,bold=True,align="right"):
+        draw_text(d,str(s),(int(x-180),int(y),int(x+180),int(y+size+8)),size,bold,align)
+    def plane(cx,cy,size):
+        sc=5; q=Image.new("L",(100*sc,136*sc),255); qd=ImageDraw.Draw(q)
+        def poly(pts): qd.polygon([(int(a*sc),int(b*sc)) for a,b in pts],fill=0)
+        poly([(50,5),(56,18),(57,91),(54,115),(50,130),(46,115),(43,91),(44,18)])
+        poly([(44,45),(9,60),(4,67),(7,72),(43,68)])
+        poly([(56,45),(91,60),(96,67),(93,72),(57,68)])
+        poly([(44,96),(23,108),(20,112),(23,115),(47,108)])
+        poly([(56,96),(77,108),(80,112),(77,115),(53,108)])
+        q=q.resize((size,int(size*1.36)),Image.Resampling.LANCZOS).point(lambda p:255 if p>=128 else 0).convert("1")
+        canvas.paste(q,(round(cx-size/2),round(cy-size*1.36/2)))
+    def parcels_icon(cx,cy,size):
+        s=size/105
+        for ox,oy,k in [(-20,12,.72),(18,-13,.8)]:
+            r=29*k*s; x=cx+ox*s; y=cy+oy*s
+            d.polygon([(x,y-r*.62),(x+r*.72,y-r*.25),(x+r*.72,y+r*.48),(x,y+r*.85),(x-r*.72,y+r*.48),(x-r*.72,y-r*.25)],outline=0,width=max(2,int(4*s)))
+            d.line([(x-r*.72,y-r*.25),(x,y+r*.13),(x+r*.72,y-r*.25)],fill=0,width=max(2,int(4*s)))
+            d.line((x,y+r*.13,x,y+r*.85),fill=0,width=max(2,int(4*s)))
+    def cloud(cx,cy,size):
+        s=size/100
+        d.ellipse((cx-40*s,cy-8*s,cx-4*s,cy+28*s),fill=0)
+        d.ellipse((cx-21*s,cy-35*s,cx+22*s,cy+28*s),fill=0)
+        d.ellipse((cx+9*s,cy-13*s,cx+47*s,cy+28*s),fill=0)
+        d.rectangle((cx-25*s,cy+5*s,cx+30*s,cy+28*s),fill=0)
+        for dx in (-23,0,23): d.line((cx+dx*s,cy+36*s,cx+(dx-7)*s,cy+52*s),fill=0,width=max(3,int(6*s)))
+    def wallet_icon(cx,cy,size):
+        s=size/100; sw=max(3,int(6*s))
+        d.rounded_rectangle((cx-48*s,cy-31*s,cx+33*s,cy+32*s),radius=max(5,int(11*s)),outline=0,width=sw)
+        d.line((cx-38*s,cy-20*s,cx+26*s,cy-20*s),fill=0,width=max(3,int(5*s)))
+        d.rounded_rectangle((cx+5*s,cy-10*s,cx+52*s,cy+19*s),radius=max(4,int(7*s)),fill=255,outline=0,width=max(3,int(5*s)))
+        d.ellipse((cx+18*s,cy-1*s,cx+26*s,cy+7*s),fill=0)
+    # Headline and simple four-tile marker.
+    head_size=30 if portrait else 35
+    draw_text(d,data.get("title","היום שלנו"),(margin,6,w-margin-46,header_h-3),head_size,True,"right")
+    sx=w-margin-22; sy=21 if not portrait else 17
+    for dx,dy in [(0,0),(14,0),(0,14),(14,14)]:
+        d.rectangle((sx+dx-4,sy+dy-4,sx+dx+3,sy+dy+3),outline=0,width=2)
+    d.line((margin,header_h-10,w-margin,header_h-10),fill=0,width=2)
+    # Per-tile type scales to respect the narrow portrait layout.
+    if not portrait:
+        icon_size=88; value_size=82; label_size=28; detail_size=28
+        # Travel, upper right
+        b=rects["trip"]; plane(b[0]+66,b[1]+110,66)
+        draw_text(d,title(trip),(b[0]+92,b[1]+10,b[2]-16,b[1]+51),30,True,"right")
+        draw_text(d,value(trip),(b[0]+100,b[1]+42,b[2]-40,b[1]+131),84,True,"center")
+        draw_text(d,detail(trip),(b[0]+20,b[3]-48,b[2]-20,b[3]-10),28,True,"center")
+        # Parcels, upper left
+        b=rects["parcels"]; parcels_icon(b[0]+68,b[1]+107,112)
+        draw_text(d,title(parcels),(b[0]+88,b[1]+10,b[2]-15,b[1]+51),29,True,"right")
+        draw_text(d,value(parcels),(b[0]+100,b[1]+42,b[2]-40,b[1]+131),84,True,"center")
+        draw_text(d,detail(parcels),(b[0]+20,b[3]-48,b[2]-20,b[3]-10),28,True,"center")
+        # Weather, lower right
+        b=rects["weather"]; cloud(b[0]+68,b[1]+102,108)
+        draw_text(d,title(weather),(b[0]+13,b[1]+8,b[2]-15,b[1]+47),27,True,"right")
+        draw_text(d,value(weather),(b[0]+95,b[1]+43,b[2]-18,b[1]+102),54,True,"center")
+        draw_text(d,detail(weather),(b[0]+105,b[1]+106,b[2]-18,b[1]+143),26,True,"center")
+        draw_text(d,detail(weather,"rain"),(b[0]+8,b[1]+174,b[2]-12,b[1]+205),20,True,"center")
+        # Wallet, lower left
+        b=rects["wolt"]; wallet_icon(b[0]+68,b[1]+106,108)
+        draw_text(d,title(wolt),(b[0]+95,b[1]+10,b[2]-15,b[1]+51),30,True,"right")
+        draw_text(d,value(wolt),(b[0]+95,b[1]+64,b[2]-15,b[1]+128),56,True,"center")
+    else:
+        # Portrait: stack the title, value, large icon, and supporting detail.
+        for name,obj in [("trip",trip),("parcels",parcels),("weather",weather),("wolt",wolt)]:
+            b=rects[name]; cx=(b[0]+b[2])/2
+            draw_text(d,title(obj),(b[0]+10,b[1]+14,b[2]-10,b[1]+53),24,True,"center")
+            if name=="trip":
+                draw_text(d,value(obj),(b[0]+10,b[1]+61,b[2]-10,b[1]+133),72,True,"center")
+                plane(cx,b[1]+218,80)
+                draw_text(d,detail(obj),(b[0]+8,b[3]-47,b[2]-8,b[3]-10),23,True,"center")
+            elif name=="parcels":
+                draw_text(d,value(obj),(b[0]+10,b[1]+61,b[2]-10,b[1]+133),72,True,"center")
+                parcels_icon(cx,b[1]+213,130)
+                draw_text(d,detail(obj),(b[0]+8,b[3]-47,b[2]-8,b[3]-10),23,True,"center")
+            elif name=="weather":
+                draw_text(d,value(obj),(b[0]+8,b[1]+56,b[2]-8,b[1]+116),44,True,"center")
+                cloud(cx,b[1]+187,100)
+                draw_text(d,detail(obj),(b[0]+8,b[1]+246,b[2]-8,b[1]+280),22,True,"center")
+                draw_text(d,detail(obj,"rain"),(b[0]+8,b[3]-50,b[2]-8,b[3]-12),17,True,"center")
+            else:
+                draw_text(d,value(obj),(b[0]+8,b[1]+75,b[2]-8,b[1]+151),52,True,"center")
+                wallet_icon(cx,b[1]+220,110)
+    return canvas.point(lambda p:255 if p>=128 else 0).convert("1")
+
+
+
 def render_payload(payload, w, h, received=None, count=0, image_loader=ws.load_image):
     """All legacy fields remain supported, including unknown key/value rows."""
     p=dict(payload)
+    if str(p.get("mode", "")).strip().lower() == "infographic":
+        return draw_infographic(p, w, h)
     if str(p.get("mode", "")).strip().lower() == "shipments":
         return draw_shipments(shipments_data(p), w, h)
     if str(p.get("mode","")).strip().lower()=="monkey":
