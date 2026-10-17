@@ -1,5 +1,5 @@
 {
-  "updated_at": "17.10.2026 07:08 Asia/Jerusalem",
+  "updated_at": "17.10.2026 09:28 Asia/Jerusalem",
   "title": "היום שלנו",
   "trip": {
     "label": "בודפשט",
@@ -8,8 +8,8 @@
   },
   "parcels": {
     "label": "חבילות לאיסוף",
-    "value": "1",
-    "detail": "נכון ל-16.10: Shipi"
+    "value": "0",
+    "detail": "כל החבילות נאספו"
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
