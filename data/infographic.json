@@ -1,21 +1,21 @@
 {
-  "updated_at": "19.10.2026 07:07 Asia/Jerusalem",
+  "updated_at": "20.10.2026 07:07 Asia/Jerusalem",
   "title": "היום שלנו",
   "trip": {
     "label": "בודפשט",
-    "value": "17",
+    "value": "16",
     "detail": "ימים עד הטיסה"
   },
   "parcels": {
     "label": "חבילות לאיסוף",
-    "value": "0",
-    "detail": "אין חבילות לאיסוף"
+    "value": "1",
+    "detail": "תיקי כרטיסים"
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
-    "value": "18°–26°",
-    "detail": "מעונן חלקית",
-    "rain": "בוקר: עד 10% | מ-15:00 0%"
+    "value": "17°–26°",
+    "detail": "בהיר עד מעונן חלקית",
+    "rain": "בוקר: 0% | ערב: עד 2%"
   },
   "wolt": {
     "label": "קרדיט Wolt",
