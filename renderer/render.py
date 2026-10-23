@@ -356,6 +356,22 @@ def draw_infographic(data, w, h):
         d.ellipse((cx+9*s,cy-13*s,cx+47*s,cy+28*s),fill=0)
         d.rectangle((cx-25*s,cy+5*s,cx+30*s,cy+28*s),fill=0)
         for dx in (-23,0,23): d.line((cx+dx*s,cy+36*s,cx+(dx-7)*s,cy+52*s),fill=0,width=max(3,int(6*s)))
+    def weather_icon(cx,cy,size):
+        """Simple partly-cloudy mark: sun behind a small cloud, no rain strokes."""
+        s=size/100
+        sw=max(2,int(3*s))
+        # Sun and rays sit above/right of the cloud.
+        sx=cx+13*s; sy=cy-11*s; r=17*s
+        d.ellipse((sx-r,sy-r,sx+r,sy+r),outline=0,width=sw)
+        for dx,dy in [(0,-1),(1,0),(0,1),(-1,0),(0.71,-0.71),(0.71,0.71),(-0.71,0.71),(-0.71,-0.71)]:
+            d.line((sx+dx*22*s,sy+dy*22*s,sx+dx*29*s,sy+dy*29*s),fill=0,width=sw)
+        # Cloud base, deliberately within the left icon column.
+        bx=cx-12*s; by=cy+13*s
+        d.ellipse((bx-30*s,by-5*s,bx-7*s,by+18*s),fill=255,outline=0,width=sw)
+        d.ellipse((bx-19*s,by-23*s,bx+9*s,by+18*s),fill=255,outline=0,width=sw)
+        d.ellipse((bx+1*s,by-8*s,bx+25*s,by+18*s),fill=255,outline=0,width=sw)
+        d.line((bx-19*s,by+15*s,bx+13*s,by+15*s),fill=0,width=sw)
+        d.line((bx-24*s,by+15*s,bx+19*s,by+15*s),fill=0,width=sw)
     def wallet_icon(cx,cy,size):
         s=size/100; sw=max(3,int(6*s))
         d.rounded_rectangle((cx-48*s,cy-31*s,cx+33*s,cy+32*s),radius=max(5,int(11*s)),outline=0,width=sw)
@@ -383,7 +399,7 @@ def draw_infographic(data, w, h):
         draw_text(d,value(parcels),(b[0]+100,b[1]+42,b[2]-40,b[1]+131),84,True,"center")
         draw_text(d,detail(parcels),(b[0]+20,b[3]-48,b[2]-20,b[3]-10),28,True,"center")
         # Weather, lower right
-        b=rects["weather"]; cloud(b[0]+68,b[1]+102,108)
+        b=rects["weather"]; weather_icon(b[0]+52,b[1]+100,76)
         draw_text(d,title(weather),(b[0]+13,b[1]+8,b[2]-15,b[1]+47),27,True,"right")
         draw_text(d,value(weather),(b[0]+95,b[1]+43,b[2]-18,b[1]+102),54,True,"center")
         draw_text(d,detail(weather),(b[0]+105,b[1]+106,b[2]-18,b[1]+143),26,True,"center")
@@ -407,7 +423,7 @@ def draw_infographic(data, w, h):
                 draw_text(d,detail(obj),(b[0]+8,b[3]-47,b[2]-8,b[3]-10),23,True,"center")
             elif name=="weather":
                 draw_text(d,value(obj),(b[0]+8,b[1]+56,b[2]-8,b[1]+116),44,True,"center")
-                cloud(cx,b[1]+187,100)
+                weather_icon(cx,b[1]+182,86)
                 draw_text(d,detail(obj),(b[0]+8,b[1]+246,b[2]-8,b[1]+280),22,True,"center")
                 draw_text(d,detail(obj,"rain"),(b[0]+8,b[3]-50,b[2]-8,b[3]-12),17,True,"center")
             else:
