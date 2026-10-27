@@ -356,8 +356,11 @@ def draw_infographic(data, w, h):
         d.ellipse((cx+9*s,cy-13*s,cx+47*s,cy+28*s),fill=0)
         d.rectangle((cx-25*s,cy+5*s,cx+30*s,cy+28*s),fill=0)
         for dx in (-23,0,23): d.line((cx+dx*s,cy+36*s,cx+(dx-7)*s,cy+52*s),fill=0,width=max(3,int(6*s)))
-    def weather_icon(cx,cy,size):
-        """Simple partly-cloudy mark: sun behind a small cloud, no rain strokes."""
+    def weather_icon(cx,cy,size,rain=False):
+        """Draw a sun-cloud or a shower cloud to match the forecast."""
+        if rain:
+            cloud(cx,cy,size)
+            return
         s=size/100
         sw=max(2,int(3*s))
         # Sun and rays sit above/right of the cloud.
@@ -399,7 +402,7 @@ def draw_infographic(data, w, h):
         draw_text(d,value(parcels),(b[0]+100,b[1]+42,b[2]-40,b[1]+131),84,True,"center")
         draw_text(d,detail(parcels),(b[0]+20,b[3]-48,b[2]-20,b[3]-10),28,True,"center")
         # Weather, lower right
-        b=rects["weather"]; weather_icon(b[0]+52,b[1]+100,76)
+        b=rects["weather"]; weather_icon(b[0]+52,b[1]+100,76,"גשם" in detail(weather))
         draw_text(d,title(weather),(b[0]+13,b[1]+8,b[2]-15,b[1]+47),27,True,"right")
         draw_text(d,value(weather),(b[0]+95,b[1]+43,b[2]-18,b[1]+102),54,True,"center")
         draw_text(d,detail(weather),(b[0]+105,b[1]+106,b[2]-18,b[1]+143),26,True,"center")
@@ -423,7 +426,7 @@ def draw_infographic(data, w, h):
                 draw_text(d,detail(obj),(b[0]+8,b[3]-47,b[2]-8,b[3]-10),23,True,"center")
             elif name=="weather":
                 draw_text(d,value(obj),(b[0]+8,b[1]+56,b[2]-8,b[1]+116),44,True,"center")
-                weather_icon(cx,b[1]+182,86)
+                weather_icon(cx,b[1]+182,86,"גשם" in detail(weather))
                 draw_text(d,detail(obj),(b[0]+8,b[1]+246,b[2]-8,b[1]+280),22,True,"center")
                 draw_text(d,detail(obj,"rain"),(b[0]+8,b[3]-50,b[2]-8,b[3]-12),17,True,"center")
             else:
