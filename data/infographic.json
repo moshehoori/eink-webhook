@@ -1,25 +1,25 @@
 {
-  "updated_at": "31.10.2026 07:00 Asia/Jerusalem",
+  "updated_at": "01.11.2026 06:55 Asia/Jerusalem",
   "title": "היום שלנו",
   "trip": {
     "label": "בודפשט",
-    "value": "5",
+    "value": "4",
     "detail": "ימים עד הטיסה"
   },
   "parcels": {
     "label": "חבילות לאיסוף",
     "value": "1",
-    "detail": "צ׳יטה · ק. אריה"
+    "detail": "ק. אריה · חפיפה 14–19"
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
     "value": "16°–26°",
-    "detail": "בהיר, מתענן בצהריים",
+    "detail": "בהיר, מתענן בערב",
     "rain": "היום: 0%"
   },
   "wolt": {
     "label": "קרדיט Wolt",
-    "value": "לא זמין"
+    "value": "₪0"
   },
   "mode": "infographic"
 }
