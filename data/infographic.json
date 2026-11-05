@@ -1,25 +1,6 @@
 {
-  "updated_at": "02.11.2026 07:00 Asia/Jerusalem",
-  "title": "היום שלנו",
-  "trip": {
-    "label": "בודפשט",
-    "value": "3",
-    "detail": "ימים עד הטיסה"
-  },
-  "parcels": {
-    "label": "חבילות לאיסוף",
-    "value": "1",
-    "detail": "צ׳יטה · ממתינה"
-  },
-  "weather": {
-    "label": "מזג אוויר · רמת גן",
-    "value": "16°–30°",
-    "detail": "מעונן בבוקר, מתבהר",
-    "rain": "גשם: 0% כל היום"
-  },
-  "wolt": {
-    "label": "קרדיט Wolt",
-    "value": "לא זמין"
-  },
-  "mode": "infographic"
+  "title": "חבילות ומשלוחים",
+  "updated_at": "05.11.2026 07:19 Asia/Jerusalem",
+  "footer": "עודכן 05.11 07:19 | אין ממתינות לאיסוף",
+  "items": []
 }
