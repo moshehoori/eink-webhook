@@ -3,8 +3,8 @@
   "updated_at": "06.11.2026 07:20 Asia/Jerusalem",
   "trip": {
     "label": "בודפשט",
-    "value": "0",
-    "detail": "הטיסה היום"
+    "value": "✓",
+    "detail": "טיול נעים"
   },
   "parcels": {
     "label": "חבילות לאיסוף",
