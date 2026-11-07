@@ -3,13 +3,13 @@
   "updated_at": "07.11.2026 06:46 Asia/Jerusalem",
   "trip": {
     "label": "בודפשט",
-    "value": "✓",
+    "value": "כאן",
     "detail": "טיול נעים"
   },
   "parcels": {
     "label": "חבילות לאיסוף",
-    "value": "לא אומת",
-    "detail": "עדכון אחרון אתמול"
+    "value": "לא ידוע",
+    "detail": "אין עדכון מהיום"
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
