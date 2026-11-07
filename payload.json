@@ -1,21 +1,21 @@
 {
   "title": "היום שלנו",
-  "updated_at": "06.11.2026 07:20 Asia/Jerusalem",
+  "updated_at": "07.11.2026 06:46 Asia/Jerusalem",
   "trip": {
     "label": "בודפשט",
-    "value": "✓",
+    "value": "כאן",
     "detail": "טיול נעים"
   },
   "parcels": {
     "label": "חבילות לאיסוף",
-    "value": "0",
-    "detail": "אין ממתינות"
+    "value": "?",
+    "detail": "אין עדכון מהיום"
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
-    "value": "17°–22°",
-    "detail": "גשם צפוי בצהריים",
-    "rain": "צהריים: 75%–83%"
+    "value": "17°–20°",
+    "detail": "גשם וסופות רעמים",
+    "rain": "כל היום: 73%–100%"
   },
   "wolt": {
     "label": "קרדיט Wolt",
