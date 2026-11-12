@@ -1,11 +1,6 @@
 {
   "title": "היום שלנו",
-  "updated_at": "11.11.2026 06:46 Asia/Jerusalem",
-  "trip": {
-    "label": "בודפשט",
-    "value": "✈",
-    "detail": "טיול נעים"
-  },
+  "updated_at": "12.11.2026 06:45 Asia/Jerusalem",
   "parcels": {
     "label": "חבילות לאיסוף",
     "value": "?",
@@ -13,8 +8,8 @@
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
-    "value": "11°–22°",
-    "detail": "שמשי עד מעונן מעט",
+    "value": "13°–24°",
+    "detail": "מעונן חלקית",
     "rain": "סיכוי לגשם: 0%"
   },
   "wolt": {
