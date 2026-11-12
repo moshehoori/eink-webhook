@@ -299,17 +299,19 @@ def draw_shipments(data, w, h):
 
 
 def draw_infographic(data, w, h):
-    """Render the approved four-tile Hebrew e-ink dashboard, landscape or portrait."""
+    """Render the Hebrew e-ink dashboard, with a balanced layout when a tile is omitted."""
     if not isinstance(data, dict):
         raise ValueError("infographic payload must be an object")
-    trip = data.get("trip", {})
+    trip = data.get("trip")
     parcels = data.get("parcels", {})
     weather = data.get("weather", {})
     wolt = data.get("wolt", {})
-    required = [(trip,"label","value","detail"),(parcels,"label","value","detail"),
+    required = [(parcels,"label","value","detail"),
                 (weather,"label","value","detail","rain"),(wolt,"label","value")]
     if any(not all(isinstance(o.get(k),str) and o[k] for k in keys) for o,*keys in required):
-        raise ValueError("infographic needs trip/parcels/weather/wolt labels and values")
+        raise ValueError("infographic needs parcels/weather/wolt labels and values")
+    if trip is not None and not all(isinstance(trip.get(k),str) and trip[k] for k in ("label","value","detail")):
+        raise ValueError("trip tile must have label, value, and detail")
     if min(w,h) < 320:
         raise ValueError("infographic needs at least 320 pixels per side")
     canvas=Image.new("L",(w,h),255); d=ImageDraw.Draw(canvas)
@@ -324,8 +326,9 @@ def draw_infographic(data, w, h):
            "trip":(margin+cw+gap,header_h,w-margin,header_h+ch),
            "wolt":(margin,header_h+ch+gap,margin+cw,bottom),
            "weather":(margin+cw+gap,header_h+ch+gap,w-margin,bottom)}
-    for box in rects.values():
-        d.rounded_rectangle(box,radius=16,fill=255,outline=0,width=3)
+    if trip is not None:
+        for box in rects.values():
+            d.rounded_rectangle(box,radius=16,fill=255,outline=0,width=3)
     def title(obj): return str(obj.get("label",""))
     def value(obj): return str(obj.get("value",""))
     def detail(obj,key="detail"): return str(obj.get(key,""))
@@ -381,7 +384,62 @@ def draw_infographic(data, w, h):
         d.line((cx-38*s,cy-20*s,cx+26*s,cy-20*s),fill=0,width=max(3,int(5*s)))
         d.rounded_rectangle((cx+5*s,cy-10*s,cx+52*s,cy+19*s),radius=max(4,int(7*s)),fill=255,outline=0,width=max(3,int(5*s)))
         d.ellipse((cx+18*s,cy-1*s,cx+26*s,cy+7*s),fill=0)
-    # Headline and simple four-tile marker.
+    # An expired one-time tile can be omitted. Keep the remaining cards balanced
+    # rather than leaving a misleading empty quarter or reusing stale text.
+    if trip is None:
+        head_size=30 if portrait else 35
+        draw_text(d,data.get("title","היום שלנו"),(margin,6,w-margin-46,header_h-3),head_size,True,"right")
+        sx=w-margin-22; sy=21 if not portrait else 17
+        for dx in (0,14,28):
+            d.rectangle((sx+dx-4,sy-4,sx+dx+3,sy+3),outline=0,width=2)
+        d.line((margin,header_h-10,w-margin,header_h-10),fill=0,width=2)
+
+        if not portrait:
+            card_h=(bottom-header_h-gap)//2
+            cards={"parcels":(margin,header_h,margin+cw,header_h+card_h),
+                   "weather":(margin+cw+gap,header_h,w-margin,header_h+card_h),
+                   "wolt":(margin,header_h+card_h+gap,w-margin,bottom)}
+        else:
+            card_h=(bottom-header_h-2*gap)//3
+            cards={name:(margin,header_h+i*(card_h+gap),w-margin,header_h+i*(card_h+gap)+card_h)
+                   for i,name in enumerate(("parcels","weather","wolt"))}
+        for box in cards.values():
+            d.rounded_rectangle(box,radius=16,fill=255,outline=0,width=3)
+
+        if not portrait:
+            b=cards["parcels"]; parcels_icon(b[0]+67,b[1]+105,108)
+            draw_text(d,title(parcels),(b[0]+86,b[1]+10,b[2]-14,b[1]+48),27,True,"right")
+            draw_text(d,value(parcels),(b[0]+94,b[1]+46,b[2]-28,b[1]+128),78,True,"center")
+            draw_text(d,detail(parcels),(b[0]+12,b[3]-42,b[2]-12,b[3]-9),23,True,"center")
+
+            b=cards["weather"]; weather_icon(b[0]+51,b[1]+104,70,"גשם" in detail(weather))
+            draw_text(d,title(weather),(b[0]+12,b[1]+10,b[2]-14,b[1]+46),25,True,"right")
+            draw_text(d,value(weather),(b[0]+72,b[1]+46,b[2]-12,b[1]+101),48,True,"center")
+            draw_text(d,detail(weather),(b[0]+75,b[1]+103,b[2]-12,b[1]+136),22,True,"center")
+            draw_text(d,detail(weather,"rain"),(b[0]+12,b[1]+145,b[2]-12,b[1]+176),20,True,"center")
+
+            b=cards["wolt"]; wallet_icon(b[0]+94,(b[1]+b[3])/2,110)
+            draw_text(d,title(wolt),(b[0]+160,b[1]+28,b[2]-28,b[1]+79),31,True,"right")
+            draw_text(d,value(wolt),(b[0]+160,b[1]+85,b[2]-28,b[1]+151),52,True,"center")
+        else:
+            for name,obj in (("parcels",parcels),("weather",weather),("wolt",wolt)):
+                b=cards[name]; cx=(b[0]+b[2])/2
+                draw_text(d,title(obj),(b[0]+12,b[1]+10,b[2]-12,b[1]+47),25,True,"center")
+                if name=="parcels":
+                    draw_text(d,value(obj),(b[0]+12,b[1]+48,b[2]-12,b[1]+110),62,True,"center")
+                    parcels_icon(b[0]+74,b[1]+140,64)
+                    draw_text(d,detail(obj),(b[0]+12,b[3]-40,b[2]-12,b[3]-8),20,True,"center")
+                elif name=="weather":
+                    draw_text(d,value(obj),(b[0]+12,b[1]+48,b[2]-12,b[1]+104),43,True,"center")
+                    weather_icon(b[0]+72,b[1]+143,60,"גשם" in detail(weather))
+                    draw_text(d,detail(obj),(b[0]+116,b[1]+118,b[2]-12,b[1]+153),20,True,"center")
+                    draw_text(d,detail(obj,"rain"),(b[0]+106,b[3]-39,b[2]-12,b[3]-8),18,True,"center")
+                else:
+                    wallet_icon(b[0]+73,b[1]+150,88)
+                    draw_text(d,value(obj),(b[0]+140,b[1]+119,b[2]-12,b[1]+176),42,True,"center")
+        return canvas.point(lambda p:255 if p>=128 else 0).convert("1")
+
+    # The original four-tile layout stays unchanged when a trip tile is supplied.
     head_size=30 if portrait else 35
     draw_text(d,data.get("title","היום שלנו"),(margin,6,w-margin-46,header_h-3),head_size,True,"right")
     sx=w-margin-22; sy=21 if not portrait else 17

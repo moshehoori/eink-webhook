@@ -31,6 +31,18 @@ class RedesignTests(unittest.TestCase):
             self.assertEqual(a.mode,'1');self.assertEqual(a.size,(w,h))
         self.assertEqual(json.dumps(p),before)
 
+    def test_optional_trip_tile_renders_both_orientations(self):
+        p = {
+            "mode": "infographic", "title": "היום שלנו",
+            "parcels": {"label": "חבילות לאיסוף", "value": "?", "detail": "בדיקה אחרונה: 6.11"},
+            "weather": {"label": "מזג אוויר · רמת גן", "value": "13°–24°", "detail": "מעונן חלקית", "rain": "סיכוי לגשם: 0%"},
+            "wolt": {"label": "קרדיט Wolt", "value": "לא נבדק"},
+        }
+        for w, h in r.SIZES.values():
+            image = r.render_payload(p, w, h)
+            self.assertEqual(image.mode, "1")
+            self.assertEqual(image.size, (w, h))
+
     def test_server_and_cli_match(self):
         p={'title':'שלום','items':[['אחד','123']]}
         self.assertEqual(r.render_payload(p,792,528).tobytes(),ws.render_payload(p,792,528).tobytes())
