@@ -1,6 +1,6 @@
 {
   "title": "היום שלנו",
-  "updated_at": "13.11.2026 06:45 Asia/Jerusalem",
+  "updated_at": "14.11.2026 06:45 Asia/Jerusalem",
   "parcels": {
     "label": "חבילות לאיסוף",
     "value": "?",
@@ -9,7 +9,7 @@
   "weather": {
     "label": "מזג אוויר · רמת גן",
     "value": "13°–27°",
-    "detail": "בהיר עד מעונן מעט",
+    "detail": "משתנה, מעונן חלקית",
     "rain": "סיכוי לגשם: 0%"
   },
   "wolt": {
