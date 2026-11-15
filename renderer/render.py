@@ -421,6 +421,8 @@ def draw_infographic(data, w, h):
             b=cards["wolt"]; wallet_icon(b[0]+94,(b[1]+b[3])/2,110)
             draw_text(d,title(wolt),(b[0]+160,b[1]+28,b[2]-28,b[1]+79),31,True,"right")
             draw_text(d,value(wolt),(b[0]+160,b[1]+85,b[2]-28,b[1]+151),52,True,"center")
+            if detail(wolt):
+                draw_text(d,detail(wolt),(b[0]+145,b[1]+159,b[2]-20,b[1]+188),18,True,"center")
         else:
             for name,obj in (("parcels",parcels),("weather",weather),("wolt",wolt)):
                 b=cards[name]; cx=(b[0]+b[2])/2
@@ -435,8 +437,10 @@ def draw_infographic(data, w, h):
                     draw_text(d,detail(obj),(b[0]+116,b[1]+118,b[2]-12,b[1]+153),20,True,"center")
                     draw_text(d,detail(obj,"rain"),(b[0]+106,b[3]-39,b[2]-12,b[3]-8),18,True,"center")
                 else:
-                    wallet_icon(b[0]+73,b[1]+150,88)
-                    draw_text(d,value(obj),(b[0]+140,b[1]+119,b[2]-12,b[1]+176),42,True,"center")
+                    wallet_icon(b[0]+75,b[1]+170,78)
+                    draw_text(d,value(obj),(b[0]+132,b[1]+64,b[2]-12,b[1]+116),42,True,"center")
+                    if detail(obj):
+                        draw_text(d,detail(obj),(b[0]+122,b[1]+116,b[2]-12,b[1]+145),16,True,"center")
         return canvas.point(lambda p:255 if p>=128 else 0).convert("1")
 
     # The original four-tile layout stays unchanged when a trip tile is supplied.

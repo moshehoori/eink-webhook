@@ -43,6 +43,21 @@ class RedesignTests(unittest.TestCase):
             self.assertEqual(image.mode, "1")
             self.assertEqual(image.size, (w, h))
 
+    def test_optional_wolt_detail_renders_in_both_orientations(self):
+        p = {
+            "mode": "infographic", "title": "היום שלנו",
+            "parcels": {"label": "חבילות לאיסוף", "value": "?", "detail": "בדיקה אחרונה: 6.11"},
+            "weather": {"label": "מזג אוויר · רמת גן", "value": "14°–25°", "detail": "בהיר", "rain": "סיכוי לגשם: 0%"},
+            "wolt": {"label": "קרדיט Wolt", "value": "לא זמין", "detail": "נבדק לאחרונה: 15.11"},
+        }
+        for w, h in r.SIZES.values():
+            with_detail = r.render_payload(p, w, h)
+            without_detail = dict(p)
+            without_detail["wolt"] = dict(p["wolt"])
+            without_detail["wolt"].pop("detail")
+            without_detail_image = r.render_payload(without_detail, w, h)
+            self.assertNotEqual(with_detail.tobytes(), without_detail_image.tobytes())
+
     def test_server_and_cli_match(self):
         p={'title':'שלום','items':[['אחד','123']]}
         self.assertEqual(r.render_payload(p,792,528).tobytes(),ws.render_payload(p,792,528).tobytes())

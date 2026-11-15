@@ -1,6 +1,6 @@
 {
   "title": "היום שלנו",
-  "updated_at": "15.11.2026 06:45 Asia/Jerusalem",
+  "updated_at": "15.11.2026 07:20 Asia/Jerusalem",
   "parcels": {
     "label": "חבילות לאיסוף",
     "value": "?",
@@ -14,7 +14,7 @@
   },
   "wolt": {
     "label": "קרדיט Wolt",
-    "value": "לא זמין"
+    "value": "₪0.00"
   },
   "mode": "infographic"
 }
