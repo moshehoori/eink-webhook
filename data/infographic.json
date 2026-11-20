@@ -1,6 +1,6 @@
 {
   "title": "היום שלנו",
-  "updated_at": "19.11.2026 06:46 Asia/Jerusalem",
+  "updated_at": "20.11.2026 06:46 Asia/Jerusalem",
   "parcels": {
     "label": "חבילות לאיסוף",
     "value": "?",
@@ -8,14 +8,14 @@
   },
   "weather": {
     "label": "מזג אוויר · רמת גן",
-    "value": "14°–25°",
-    "detail": "מעונן בבוקר, בהיר בצהריים",
+    "value": "15°–27°",
+    "detail": "בהיר, מעונן מעט בערב",
     "rain": "סיכוי לגשם: 0%"
   },
   "wolt": {
     "label": "קרדיט Wolt",
-    "value": "לא זמין",
-    "detail": "נבדק לאחרונה: 16.11"
+    "value": "₪0.00",
+    "detail": "נבדק: 20.11"
   },
   "mode": "infographic"
 }
