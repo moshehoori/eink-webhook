@@ -1,0 +1,21 @@
+{
+  "mode": "infographic",
+  "title": "היום שלנו",
+  "updated_at": "28.11.2026 06:46 Asia/Jerusalem",
+  "parcels": {
+    "label": "חבילות לאיסוף",
+    "value": "?",
+    "detail": "בדיקה אחרונה: 6.11"
+  },
+  "weather": {
+    "label": "מזג אוויר · רמת גן",
+    "value": "15°–23°",
+    "detail": "מעונן, גשם קל בערב",
+    "rain": "סיכוי לגשם בערב: עד 5%"
+  },
+  "wolt": {
+    "label": "קרדיט Wolt",
+    "value": "₪0.00",
+    "detail": "נבדק: 28.11"
+  }
+}
